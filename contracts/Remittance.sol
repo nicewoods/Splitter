@@ -33,7 +33,6 @@ contract Remittance {
 
     event LogNewCredit(address depositor, uint amount);
     event LogRetrievalSucceeded(address beneficiary, uint amount);
-    event LogRetrievalFailed(address beneficiary, uint amount);
     event LogRefund(address beneficiary, uint amount);
     event LogSuicide(address beneficiary, uint amount);
 
@@ -60,7 +59,7 @@ contract Remittance {
     }
 
     
-    function retrieveAmount(string password1, string password2, address depositor) public returns (bytes32)
+    function retrieveAmount(string password1, string password2, address depositor) public returns (bool)
     {
         if (block.timestamp > _limit)
             throw;
@@ -82,7 +81,7 @@ contract Remittance {
         theDeposit.secret = 0;
         
         LogRetrievalSucceeded(msg.sender,  theDeposit.amount);            
-        return proof;
+        return true;
     }
     
     function Refund(address depositor) public returns(bool)
