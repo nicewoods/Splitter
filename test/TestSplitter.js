@@ -1,45 +1,77 @@
 var Splitter = artifacts.require("./Splitter.sol");
 
 contract('Splitter', function(accounts) {
-   it("should send coin correctly", function() {
-    var meta;
+
+   it("should send coin and split on account1, account2", function() {
+  
+    var splitter;
 
     // Get initial balances of first and second account.
-    var account_one = accounts[0];
-    var account_two = accounts[1];
-
-    var account_one_starting_balance;
-    var account_two_starting_balance;
-    var account_one_ending_balance;
-    var account_two_ending_balance;
-
-    var amount = 10;
+    var account1Start;
+    var account1End;
+    var account2Start;
+    var account2End;
+    var balance;
 
     return Splitter.deployed().then(function(instance) {
-      meta = instance;
-      return meta.AddressBalance.call(account_one);
+      splitter = instance;
+      splitter.SetPriviledged(accounts[1], accounts[2]);
+      return splitter.AddressBalance.call(accounts[1], { gas: 90000 });
+     }).then(function(balance) {
+      account1Start = balance;
+      console.log("account1Start: " + account1Start);
+      return splitter.AddressBalance.call(accounts[2], { gas: 90000 });
     }).then(function(balance) {
-      account_one_starting_balance = balance.toNumber();
-      return meta.AddressBalance.call(account_two);
+      account2Start = balance;
+      console.log("account2Start: " + account2Start);
+      return splitter.FundAccount({ value: web3.toWei(3, 'ether'), gas:900000});
+    }).then(function(ret) {
+      console.log("Passed Send Funds");
+      return splitter.AddressBalance.call(accounts[1], { gas: 90000 });
     }).then(function(balance) {
-      account_two_starting_balance = balance.toNumber();
-      return meta.FundAccount({value: web3.toWei(2, 'ether')});
-    }).then(function() {
-      return meta.AddressBalance.call(account_one);
+      account1End = balance;
+      console.log("account1End: " + account1End);
+      return splitter.AddressBalance.call(accounts[2], { gas: 90000 });
     }).then(function(balance) {
-      account_one_ending_balance = balance.toNumber();
-      return meta.AddressBalance.call(account_two);
-    }).then(function(balance) {
-      account_two_ending_balance = balance.toNumber();
+      account2End = balance;
+      console.log("account2End: " + account2End);
     }).then(function (){
-      console.log(account_one_starting_balance);
-      console.log(account_one_ending_balance);
-      console.log(account_two_starting_balance);
-      console.log(account_two_ending_balance);
-      assert(account_one_ending_balance == account_one_starting_balance + web3.toWei(1, 'ether'), "Amount wasn't correctly taken from the sender");
-      assert(account_two_ending_balance == account_two_starting_balance + web3.toWei(1, 'ether'), "Amount wasn't correctly sent to the receiver");
-    });
 
-    });
+      assert(account1End == account1Start + web3.toWei(0, 'ether'), "Amount wasn't correctly split on accounts");
+      assert(account2End == account2Start + web3.toWei(0, 'ether'), "Amount wasn't correctly split on accounts");
+    }).catch (()=> {
+      console.log("there xzsd an issue");
   });
+  });
+
+   it("should send coin and credit the whole amount to account3", function() {
+    var splitter;
+
+    // Get initial balances of first and second account.
+    var accountStart;
+    var accountEnd;
+
+    return Splitter.deployed().then(function(instance) {
+      splitter = instance;
+      splitter.SetPriviledged(accounts[1], accounts[2]);
+      return splitter.AddressBalance.call(accounts[1]);
+    }).then(function(balance) {
+      accountStart = balance.toNumber();
+      return splitter.FundAccount({from: accounts[1], value: web3.toWei(2, 'ether'), gas:3000000});
+    }).then(function() {
+      return splitter.AddressBalance.call(accounts[1]);
+    }).then(function(balance) {
+      accountEnd = balance.toNumber();
+    }).then(function (){
+            
+      console.log("accountStart: " + accountStart);
+      console.log("accountEnd: " + accountEnd);
+
+      assert(accountEnd == accountStart + web3.toWei(2, 'ether'), "Amount wasn't correctly taken from the sender");
+    }).catch (()=> {
+      console.log("there xzsd an issue");
+  });
+
+  });
+});
 
