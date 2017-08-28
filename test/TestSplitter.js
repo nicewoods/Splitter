@@ -7,70 +7,67 @@ contract('Splitter', function(accounts) {
     var splitter;
 
     // Get initial balances of first and second account.
-    var account1Start;
-    var account1End;
-    var account2Start;
-    var account2End;
     var balance;
 
+    var account0Initial = web3.eth.getBalance(accounts[0]);
+    var account1Final;
+    var account2Final;
+    var account1 = accounts[1];
+    var account2 = accounts[2];    
+    
     return Splitter.deployed().then(function(instance) {
       splitter = instance;
-      splitter.SetPriviledged(accounts[1], accounts[2]);
-      return splitter.AddressBalance.call(accounts[1], { gas: 90000 });
-     }).then(function(balance) {
-      account1Start = balance;
-      console.log("account1Start: " + account1Start);
-      return splitter.AddressBalance.call(accounts[2], { gas: 90000 });
-    }).then(function(balance) {
-      account2Start = balance;
-      console.log("account2Start: " + account2Start);
-      return splitter.FundAccount({ value: web3.toWei(3, 'ether'), gas:900000});
-    }).then(function(ret) {
-      console.log("Passed Send Funds");
-      return splitter.AddressBalance.call(accounts[1], { gas: 90000 });
-    }).then(function(balance) {
-      account1End = balance;
-      console.log("account1End: " + account1End);
-      return splitter.AddressBalance.call(accounts[2], { gas: 90000 });
-    }).then(function(balance) {
-      account2End = balance;
-      console.log("account2End: " + account2End);
-    }).then(function (){
+    }).then(function() {
+      return splitter.Split(account1, account2, { value: web3.toWei(1, "ether"), gas:1000000});
+    }).then(function() {
+      return splitter.balances(account1);
+    }).then((balance) => {
+      account1Final = balance;
+      return splitter.balances(account2);
+    }).then((balance) => {
+      account2Final = balance;
+    }).then(()=> {
+      console.log("account0Initial: ", account0Initial.toString());
+      console.log("account0Final: ", web3.eth.getBalance(accounts[0]).toString());
+      console.log("account1Final: ", account1Final.toString());
 
-      assert(account1End == account1Start + web3.toWei(0, 'ether'), "Amount wasn't correctly split on accounts");
-      assert(account2End == account2Start + web3.toWei(0, 'ether'), "Amount wasn't correctly split on accounts");
-    }).catch (()=> {
-      console.log("there xzsd an issue");
+      assert(account1Final == web3.toWei(0.5,"ether"), "Amount wasn't correctly split on account[1]");
+      assert(account2Final == web3.toWei(0.5,"ether"), "Amount wasn't correctly split on account[2]");
   });
-  });
+});
 
-   it("should send coin and credit the whole amount to account3", function() {
+
+
+it("should credit account1, account2", function() {
     var splitter;
 
     // Get initial balances of first and second account.
-    var accountStart;
-    var accountEnd;
+    var account1Initial = web3.eth.getBalance(accounts[1]);
+    var account2Initial = web3.eth.getBalance(accounts[2]);
+    var account1Final;
+    var account2Final;
+    var account1 = accounts[1];
+    var account2 = accounts[2];    
 
     return Splitter.deployed().then(function(instance) {
       splitter = instance;
-      splitter.SetPriviledged(accounts[1], accounts[2]);
-      return splitter.AddressBalance.call(accounts[1]);
-    }).then(function(balance) {
-      accountStart = balance.toNumber();
-      return splitter.FundAccount({from: accounts[1], value: web3.toWei(2, 'ether'), gas:3000000});
-    }).then(function() {
-      return splitter.AddressBalance.call(accounts[1]);
-    }).then(function(balance) {
-      accountEnd = balance.toNumber();
+      return splitter.SendFunds(accounts[1]);
+    }).then(function(h) {
+      console.log(h);
+      return splitter.SendFunds(accounts[2]);
+    }).then((h)=> {
+      account1Final = web3.eth.getBalance(accounts[1]);
+      account2Final = web3.eth.getBalance(accounts[2]);
     }).then(function (){
-            
-      console.log("accountStart: " + accountStart);
-      console.log("accountEnd: " + accountEnd);
 
-      assert(accountEnd == accountStart + web3.toWei(2, 'ether'), "Amount wasn't correctly taken from the sender");
-    }).catch (()=> {
-      console.log("there xzsd an issue");
-  });
+      console.log("account1Initial: ", account1Initial.toString());
+      console.log("account1Final: ", account1Final.toString());
+      console.log("account2Initial: ", account2Initial.toString());
+      console.log("account2Final: ", account2Final.toString());
+            
+      assert(account1Final == account1Initial + web3.toWei(0.5, 'ether'), "Amount1 wasn't correctly taken from the sender");
+      assert(account2Final == account2Initial + web3.toWei(0.5, 'ether'), "Amount2 wasn't correctly taken from the sender");
+    });
 
   });
 });
